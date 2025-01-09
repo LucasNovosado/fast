@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Entregas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1><i class="fas fa-truck"></i> Nova Entrega</h1>
+            
+            <form id="entregaForm">
+                <div class="input-group">
+                    <i class="fas fa-phone"></i>
+                    <input type="tel" id="telefone" required placeholder="Telefone">
+                </div>
+
+                <div class="input-group">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <input type="text" id="cep" required placeholder="CEP">
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-paper-plane"></i> Enviar
+                </button>
+            </form>
+
+            <div id="mediaCard" class="media-card">
+                <div class="media-content">
+                    <h3><i class="fas fa-chart-line"></i> Média de Tempo das Entregas</h3>
+                    <div class="media-info">
+                        <p id="mediaText">Carregando...</p>
+                        <p id="totalEntregas" class="total-entregas">Total de entregas: --</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="entregasEmAndamentoContainer" class="card">
+                <h2><i class="fas fa-clock"></i> Entregas em Andamento</h2>
+                <div id="entregasEmAndamento" class="entregas-grid"></div>
+            </div>
+
+            <div id="tabelaEntregas" class="tabela-container">
+                <h3><i class="fas fa-list"></i> Histórico de Entregas</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nº</th>
+                                <th>Telefone</th>
+                                <th>CEP</th>
+                                <th>Local Inicial</th>
+                                <th>Local Final</th>
+                                <th>Iniciado</th>
+                                <th>Finalizado</th>
+                                <th>Duração</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaEntregasBody">
+                            <tr>
+                                <td colspan="8" class="loading-text">Carregando entregas...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <div id="modalDuracao" class="modal hidden">
+        <div class="modal-content">
+            <h2><i class="fas fa-clock"></i> Duração da Entrega</h2>
+            <p id="duracaoText"></p>
+            <button id="btnFecharModal" class="btn-primary">
+                <i class="fas fa-times"></i> Fechar
+            </button>
+        </div>
+    </div>
+    
+    <script src="/js/main.js"></script>
+</body>
+</html>
