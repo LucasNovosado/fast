@@ -1,3 +1,4 @@
+<!-- counter.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -11,14 +12,14 @@
     <div class="container">
         <div class="card">
             <div class="timer-container">
-                <h2>Tempo Restante</h2>
-                <div id="timer" class="timer">30:00</div>
+                <h2>Tempo Passado - atualiza a cada 1m</h2>
+                <div id="timer" class="timer">0 minutos</div>
                 <div id="iniciado" class="datetime"></div>
             </div>
             
-            <div id="alertaTimer" class="alerta hidden">
-                <i class="fas fa-exclamation-triangle"></i>
-                Tempo esgotando!
+            <div id="remaining-card" class="remaining-card">
+                <i class="fas fa-hourglass-half"></i>
+                <span id="remaining-time">30 minutos restantes</span>
             </div>
             
             <div class="button-group">
@@ -50,6 +51,6 @@
             const audio = new Audio('/ring.mp3');
             audio.load();
         });
-    </script
+    </script>
 </body>
 </html>
