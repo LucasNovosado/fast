@@ -20,32 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     iniciarTimer();
 });
 
-function iniciarTimer() {
-    let tempoRestante = 30 * 60;
-    const timerElement = document.getElementById('timer');
-    const alertaElement = document.getElementById('alertaTimer');
-    
-    iniciadoTime = new Date();
-    document.getElementById('iniciado').textContent = 
-        `Iniciado em: ${iniciadoTime.toLocaleString()}`;
-    
-    timerInterval = setInterval(() => {
-        tempoRestante--;
-        const minutos = Math.floor(tempoRestante / 60);
-        const segundos = tempoRestante % 60;
-        
-        timerElement.textContent = 
-            `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-        
-        if (tempoRestante <= 10 * 60) {
-            alertaElement.classList.remove('hidden');
-        }
-        
-        if (tempoRestante <= 0) {
-            clearInterval(timerInterval);
-        }
-    }, 1000);
-}
+
 
 async function handleFinalizar() {
     const btnFinalizar = document.getElementById('btnFinalizar');
@@ -153,34 +128,35 @@ function calcularDuracao(inicio, fim) {
 }
 
 function iniciarTimer() {
-    let tempoRestante = 30 * 60;
     const timerElement = document.getElementById('timer');
-    const alertaElement = document.getElementById('alertaTimer');
+    const remainingElement = document.getElementById('remaining-time');
     
     iniciadoTime = new Date();
     document.getElementById('iniciado').textContent = 
         `Iniciado em: ${iniciadoTime.toLocaleString()}`;
     
     timerInterval = setInterval(() => {
-        tempoRestante--;
-        const minutos = Math.floor(tempoRestante / 60);
-        const segundos = tempoRestante % 60;
+        const agora = new Date();
+        const diff = agora - iniciadoTime;
+        const minutosDecorridos = Math.floor(diff / (1000 * 60));
+        const minutosRestantes = 30 - minutosDecorridos;
         
-        timerElement.textContent = 
-            `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+        timerElement.textContent = `${minutosDecorridos} minutos`;
+        remainingElement.textContent = `${Math.max(0, minutosRestantes)} minutos restantes`;
         
-        // Toca o áudio quando faltar exatamente 29:30
-        if (minutos === 29 && segundos === 30 && !audioTocado) {
+        // Toca o áudio quando completar exatamente 1 minuto
+        if (minutosDecorridos === 1 && !audioTocado) {
             audio.play().catch(error => console.error('Erro ao tocar áudio:', error));
             audioTocado = true;
         }
-        
-        if (tempoRestante <= 10 * 60) {
-            alertaElement.classList.remove('hidden');
-        }
-        
-        if (tempoRestante <= 0) {
-            clearInterval(timerInterval);
-        }
-    }, 1000);
+    }, 60000); // Atualiza a cada 1 minuto (60000 ms)
+
+    // Primeira execução imediata para não esperar 1 minuto
+    const agora = new Date();
+    const diff = agora - iniciadoTime;
+    const minutosDecorridos = Math.floor(diff / (1000 * 60));
+    const minutosRestantes = 30 - minutosDecorridos;
+    
+    timerElement.textContent = `${minutosDecorridos} minutos`;
+    remainingElement.textContent = `${Math.max(0, minutosRestantes)} minutos restantes`;
 }
