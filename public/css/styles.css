@@ -554,3 +554,35 @@ input[style*="border-color"] {
         margin-bottom: 20px;
     }
 }
+
+/* Adicione estes estilos ao seu arquivo CSS */
+.remaining-card {
+    background-color: var(--danger-color);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin: 1.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(255, 61, 0, 0.2);
+    animation: pulseAlert 2s infinite;
+}
+
+.remaining-card i {
+    font-size: 1.5rem;
+}
+
+@keyframes pulseAlert {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* Ajuste do espaçamento para acomodar o novo card */
+.button-group {
+    margin-top: 2rem;
+}
