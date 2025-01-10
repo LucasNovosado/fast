@@ -144,8 +144,8 @@ function iniciarTimer() {
         timerElement.textContent = `${minutosDecorridos} minutos`;
         remainingElement.textContent = `${Math.max(0, minutosRestantes)} minutos restantes`;
         
-        // Toca o áudio quando completar exatamente 1 minuto
-        if (minutosDecorridos === 1 && !audioTocado) {
+        // Toca o áudio quando completar exatamente 20 minuto
+        if (minutosDecorridos === 20 && !audioTocado) {
             audio.play().catch(error => console.error('Erro ao tocar áudio:', error));
             audioTocado = true;
         }
