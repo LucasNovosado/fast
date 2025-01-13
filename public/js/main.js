@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('entregaForm');
     const telefoneInput = document.getElementById('telefone');
-    const cepInput = document.getElementById('cep');
+    const enderecoInput = document.getElementById('endereco'); // Changed from cep to endereco
 
     // Event listener do formulário
     form.addEventListener('submit', handleSubmit);
@@ -17,14 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
         e.target.style.borderColor = numeros.length === 11 ? '' : 'var(--danger-color)';
     });
 
-    cepInput.addEventListener('input', (e) => {
-        // Formata o CEP
-        const formattedValue = formatCEP(e.target.value);
-        e.target.value = formattedValue;
-        
-        // Valida o comprimento
-        const numeros = formattedValue.replace(/\D/g, '');
-        e.target.style.borderColor = numeros.length === 8 ? '' : 'var(--danger-color)';
+    enderecoInput.addEventListener('input', (e) => {
+        // Valida o comprimento mínimo do endereço
+        const value = e.target.value.trim();
+        e.target.style.borderColor = value.length >= 3 ? '' : 'var(--danger-color)';
     });
 
     // Carrega os dados iniciais
@@ -251,61 +247,44 @@ async function carregarTabelaEntregas(pagina = 1) {
     }
 }
 
+function validateString(str) {
+    // You can customize this validation as needed
+    return str.length >= 3; // Example: requires at least 3 characters
+}
 
 async function handleSubmit(event) {
     event.preventDefault();
-    
-    const telefoneInput = document.getElementById('telefone');
-    const cepInput = document.getElementById('cep');
-    const submitButton = event.target.querySelector('button[type="submit"]');
-    const originalButtonContent = submitButton.innerHTML;
 
-    // Remove qualquer estilo de erro anterior
-    telefoneInput.style.borderColor = '';
-    cepInput.style.borderColor = '';
-    
-    // Validações
-    const telefoneNumeros = telefoneInput.value.replace(/\D/g, '');
-    const cepNumeros = cepInput.value.replace(/\D/g, '');
-    let hasError = false;
-    
-    if (telefoneNumeros.length !== 11) {
-        telefoneInput.style.borderColor = 'var(--danger-color)';
-        alert('O telefone deve ter 11 números (DDD + número)');
-        hasError = true;
-    }
-    
-    if (cepNumeros.length !== 8) {
-        cepInput.style.borderColor = 'var(--danger-color)';
-        alert('O CEP deve ter 8 números');
-        hasError = true;
-    }
-    
-    if (hasError) {
+    const telefone = document.getElementById('telefone').value;
+    const endereco = document.getElementById('endereco').value; // Changed from cep to endereco
+
+    // Validate the string input
+    if (!validateString(endereco)) {
+        alert('O endereço deve ter pelo menos 3 caracteres');
         return;
     }
 
     try {
-        submitButton.disabled = true;
-        submitButton.innerHTML = `
-            <div class="loading-spinner">
-                <i class="fas fa-circle-notch fa-spin"></i>
-                <span>Enviando...</span>
-            </div>
-        `;
-
+        // Obter localização atual
         const location = await getLocation();
+        console.log('Localização obtida:', location);
+        
+        // Converter coordenadas em endereço
         const enderecoInicial = await coordenadasParaEndereco(
             location.latitude,
             location.longitude
         );
+        console.log('Endereço a ser enviado:', enderecoInicial);
 
-        const dadosEnvio = { 
-            telefone: telefoneInput.value,
-            cep: cepInput.value,
-            localizacaoInicial: enderecoInicial 
+        // Log dos dados que serão enviados
+        const dadosEnvio = {
+            telefone,
+            endereco, // Changed from cep to endereco
+            localizacaoInicial: enderecoInicial
         };
+        console.log('Dados a serem enviados:', dadosEnvio);
 
+        // Rest of the code remains the same...
         const response = await fetch('/api/entrega', {
             method: 'POST',
             headers: {
@@ -319,19 +298,27 @@ async function handleSubmit(event) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
+        let data;
+        const textResponse = await response.text();
+        try {
+            data = JSON.parse(textResponse);
+        } catch (e) {
+            console.error('Erro ao fazer parse da resposta:', textResponse);
+            throw new Error('Resposta inválida do servidor');
+        }
         
         if (data.success) {
-            window.location.href = `/counter.html?id=${data.objectId}`;
+            currentEntregaId = data.objectId;
+            mostrarTimer();
+            iniciarTimer();
+            document.getElementById('entregaForm').classList.add('hidden');
+            document.getElementById('mediaCard').classList.add('hidden');
         } else {
             throw new Error(data.error || 'Erro desconhecido ao registrar entrega');
         }
     } catch (error) {
         console.error('Erro completo:', error);
         alert('Erro ao registrar entrega: ' + error.message);
-        
-        submitButton.disabled = false;
-        submitButton.innerHTML = originalButtonContent;
     }
 }
 
