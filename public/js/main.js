@@ -1,92 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const entregaForm = document.getElementById('entregaForm');
-    const btnFinalizar = document.getElementById('btnFinalizar');
-    const btnFecharModal = document.getElementById('btnFecharModal');
+    const form = document.getElementById('entregaForm');
     const telefoneInput = document.getElementById('telefone');
+    const cepInput = document.getElementById('cep');
 
-    if (entregaForm) {
-        entregaForm.addEventListener('submit', handleSubmit);
-    }
+    // Event listener do formulário
+    form.addEventListener('submit', handleSubmit);
 
-    if (btnFinalizar) {
-        btnFinalizar.addEventListener('click', handleFinalizar);
-    }
+    // Event listeners dos inputs
+    telefoneInput.addEventListener('input', (e) => {
+        // Formata o telefone
+        const formattedValue = formatTelefone(e.target.value);
+        e.target.value = formattedValue;
+        
+        // Valida o comprimento
+        const numeros = formattedValue.replace(/\D/g, '');
+        e.target.style.borderColor = numeros.length === 11 ? '' : 'var(--danger-color)';
+    });
 
-    if (btnFecharModal) {
-        btnFecharModal.addEventListener('click', fecharModal);
-    }
+    cepInput.addEventListener('input', (e) => {
+    });
 
-    if (telefoneInput) {
-        telefoneInput.addEventListener('input', (e) => {
-            e.target.value = formatTelefone(e.target.value);
-        });
-    }
-
-    // Remove a formatação do CEP já que agora é um campo de texto livre
-
+    // Carrega os dados iniciais
     carregarMediaEntregas();
     carregarTabelaEntregas();
+    carregarEntregasEmAndamento();
 });
-
-async function handleSubmit(event) {
-    event.preventDefault();
-
-    const telefone = document.getElementById('telefone').value;
-    const endereco = document.getElementById('endereco').value; // Mudando de cep para endereco
-
-    try {
-        const location = await getLocation();
-        console.log('Localização obtida:', location);
-        
-        const enderecoInicial = await coordenadasParaEndereco(
-            location.latitude,
-            location.longitude
-        );
-        console.log('Endereço a ser enviado:', enderecoInicial);
-
-        const dadosEnvio = {
-            telefone,
-            endereco, // Mudando de cep para endereco
-            localizacaoInicial: enderecoInicial
-        };
-        console.log('Dados a serem enviados:', dadosEnvio);
-
-        const response = await fetch('/api/entrega', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(dadosEnvio)
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        let data;
-        const textResponse = await response.text();
-        try {
-            data = JSON.parse(textResponse);
-        } catch (e) {
-            console.error('Erro ao fazer parse da resposta:', textResponse);
-            throw new Error('Resposta inválida do servidor');
-        }
-        
-        if (data.success) {
-            currentEntregaId = data.objectId;
-            mostrarTimer();
-            iniciarTimer();
-            document.getElementById('entregaForm').classList.add('hidden');
-            document.getElementById('mediaCard').classList.add('hidden');
-        } else {
-            throw new Error(data.error || 'Erro desconhecido ao registrar entrega');
-        }
-    } catch (error) {
-        console.error('Erro completo:', error);
-        alert('Erro ao registrar entrega: ' + error.message);
-    }
-}
 
 function formatTelefone(telefone) {
     // Remove tudo que não for número
@@ -105,22 +43,6 @@ function formatTelefone(telefone) {
     return truncated;
 }
 
-function formatCEP(cep) {
-    // Remove tudo que não for número
-    const cleaned = cep.replace(/\D/g, '');
-    
-    // Limita a 8 dígitos
-    const truncated = cleaned.slice(0, 8);
-    
-    // Aplica a máscara somente se tiver 8 dígitos
-    const match = truncated.match(/^(\d{5})(\d{3})$/);
-    if (match) {
-        return `${match[1]}-${match[2]}`;
-    }
-    
-    // Se não tiver 8 dígitos, retorna apenas os números
-    return truncated;
-}
 
 function getLocation() {
     return new Promise((resolve, reject) => {
@@ -306,44 +228,55 @@ async function carregarTabelaEntregas(pagina = 1) {
     }
 }
 
-function validateString(str) {
-    // You can customize this validation as needed
-    return str.length >= 3; // Example: requires at least 3 characters
-}
 
 async function handleSubmit(event) {
     event.preventDefault();
+    
+    const telefoneInput = document.getElementById('telefone');
+    const cepInput = document.getElementById('cep');
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    const originalButtonContent = submitButton.innerHTML;
 
-    const telefone = document.getElementById('telefone').value;
-    const endereco = document.getElementById('endereco').value; // Changed from cep to endereco
-
-    // Validate the string input
-    if (!validateString(endereco)) {
-        alert('O endereço deve ter pelo menos 3 caracteres');
+    // Remove qualquer estilo de erro anterior
+    telefoneInput.style.borderColor = '';
+    cepInput.style.borderColor = '';
+    
+    // Validações
+    const telefoneNumeros = telefoneInput.value.replace(/\D/g, '');
+    const cepNumeros = cepInput.value.replace(/\D/g, '');
+    let hasError = false;
+    
+    if (telefoneNumeros.length !== 11) {
+        telefoneInput.style.borderColor = 'var(--danger-color)';
+        alert('O telefone deve ter 11 números (DDD + número)');
+        hasError = true;
+    }
+    
+    if (hasError) {
         return;
     }
 
     try {
-        // Obter localização atual
+        submitButton.disabled = true;
+        submitButton.innerHTML = `
+            <div class="loading-spinner">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <span>Enviando...</span>
+            </div>
+        `;
+
         const location = await getLocation();
-        console.log('Localização obtida:', location);
-        
-        // Converter coordenadas em endereço
         const enderecoInicial = await coordenadasParaEndereco(
             location.latitude,
             location.longitude
         );
-        console.log('Endereço a ser enviado:', enderecoInicial);
 
-        // Log dos dados que serão enviados
-        const dadosEnvio = {
-            telefone,
-            endereco, // Changed from cep to endereco
-            localizacaoInicial: enderecoInicial
+        const dadosEnvio = { 
+            telefone: telefoneInput.value,
+            cep: cepInput.value,
+            localizacaoInicial: enderecoInicial 
         };
-        console.log('Dados a serem enviados:', dadosEnvio);
 
-        // Rest of the code remains the same...
         const response = await fetch('/api/entrega', {
             method: 'POST',
             headers: {
@@ -357,27 +290,19 @@ async function handleSubmit(event) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        let data;
-        const textResponse = await response.text();
-        try {
-            data = JSON.parse(textResponse);
-        } catch (e) {
-            console.error('Erro ao fazer parse da resposta:', textResponse);
-            throw new Error('Resposta inválida do servidor');
-        }
+        const data = await response.json();
         
         if (data.success) {
-            currentEntregaId = data.objectId;
-            mostrarTimer();
-            iniciarTimer();
-            document.getElementById('entregaForm').classList.add('hidden');
-            document.getElementById('mediaCard').classList.add('hidden');
+            window.location.href = `/counter.html?id=${data.objectId}`;
         } else {
             throw new Error(data.error || 'Erro desconhecido ao registrar entrega');
         }
     } catch (error) {
         console.error('Erro completo:', error);
         alert('Erro ao registrar entrega: ' + error.message);
+        
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonContent;
     }
 }
 
