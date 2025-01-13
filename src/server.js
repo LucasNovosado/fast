@@ -8,42 +8,17 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Função auxiliar para formatar endereço
 function formatarEndereco(endereco) {
-    // Se o endereço for vazio ou igual a '-', retorna '-'
-    if (!endereco || endereco === '-') return '-';
-    
-    // Divide o endereço em partes e remove espaços em branco
-    let partes = endereco.split(',').map(parte => parte.trim());
-    
-    // Filtra as partes removendo:
-    // - Partes que contêm "Região"
-    // - Partes que contêm "Brasil"
-    // - Partes duplicadas (mantendo apenas a primeira ocorrência)
-    const partesUnicas = [];
-    const partesVistas = new Set();
-    
-    partes = partes.filter(parte => {
-        // Ignora partes que contêm "Região" ou "Brasil"
-        if (parte.includes('Região') || parte.includes('Brasil')) {
-            return false;
-        }
-        
-        // Remove duplicatas mantendo apenas a primeira ocorrência
-        if (!partesVistas.has(parte)) {
-            partesVistas.add(parte);
-            partesUnicas.push(parte);
-            return true;
-        }
-        return false;
-    });
-    
-    return partes.join(', ');
+   if (!endereco || endereco === '-') return '-';
+   
+   const partes = endereco.split(',').map(parte => parte.trim());
+   if (partes.length >= 7) {
+       // Pega apenas as partes desejadas: primeira, segunda, quinta e sétima
+       return `${partes[0]}, ${partes[1]}, ${partes[4]}, ${partes[6]}`;
+   }
+   return endereco; // Retorna original se não tiver todas as partes
 }
-
-// Teste com seu endereço
-const endereco = "Rua Desembargador Clotário Portugal, Centro, Apucarana, Apucarana, Região Geográfica Imediata de Apucarana, Região Geográfica Intermediária de Londrina, Paraná, Região Sul, 86800-090, Brasil";
-console.log('\nResultado formatado:');
-console.log(formatarEndereco(endereco));
 
 // Endpoint para calcular média de entregas
 app.get('/api/media-entregas', async (req, res) => {
@@ -119,70 +94,26 @@ app.put('/api/entrega/:id/finalizar', async (req, res) => {
 });
 
 // Endpoint para listar todas as entregas
-
 app.get('/api/entregas', async (req, res) => {
-    try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = 10;
-        const skip = (page - 1) * limit;
-
-        const query = new Parse.Query("Entregas");
-        // Apenas entregas que possuem data de finalização
-        query.exists("finalizado");
-        query.notEqualTo("finalizado", null);
-        query.descending("iniciado");
-        
-        // Primeiro, pegamos o total de registros para a paginação
-        const total = await query.count();
-        
-        // Depois aplicamos o skip e limit para pegar apenas os registros da página atual
-        query.skip(skip);
-        query.limit(limit);
-        
-        const entregas = await query.find();
-        
-        const entregasFormatadas = entregas.map(entrega => ({
-            telefone: entrega.get("telefone"),
-            cep: entrega.get("cep"),
-            iniciado: entrega.get("iniciado"),
-            finalizado: entrega.get("finalizado"),
-            localizacaoInicial: (entrega.get("localizacaoInicial")),
-            localizacaoFinal: formatarEndereco(entrega.get("localizacaoFinal"))
-        }));
-        
-        res.json({
-            entregas: entregasFormatadas,
-            total,
-            totalPaginas: Math.ceil(total / limit),
-            paginaAtual: page
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+   try {
+       const query = new Parse.Query("Entregas");
+       query.descending("iniciado"); // Ordena do mais novo para o mais antigo
+       const entregas = await query.find();
+       
+       const entregasFormatadas = entregas.map(entrega => ({
+           telefone: entrega.get("telefone"),
+           cep: entrega.get("cep"),
+           iniciado: entrega.get("iniciado"),
+           finalizado: entrega.get("finalizado"),
+           localizacaoInicial: formatarEndereco(entrega.get("localizacaoInicial")),
+           localizacaoFinal: formatarEndereco(entrega.get("localizacaoFinal"))
+       }));
+       
+       res.json({ entregas: entregasFormatadas });
+   } catch (error) {
+       res.status(500).json({ error: error.message });
+   }
 });
-
-// No server.js, adicione um novo endpoint para buscar entregas em andamento:
-
-app.get('/api/entregas-em-andamento', async (req, res) => {
-    try {
-        const query = new Parse.Query("Entregas");
-        query.doesNotExist("finalizado");
-        query.ascending("iniciado");
-        const entregas = await query.find();
-        
-        const entregasFormatadas = entregas.map(entrega => ({
-            id: entrega.id,
-            telefone: entrega.get("telefone"),
-            iniciado: entrega.get("iniciado")
-        }));
-        
-        res.json({ entregas: entregasFormatadas });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
 
 // Iniciar o servidor
 app.listen(PORT, () => {
